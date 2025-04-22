@@ -35,9 +35,10 @@ import {
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    // Remove these hardcoded values
+    // name: "shadcn",
+    // email: "m@example.com",
+    // avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
     {
@@ -150,9 +151,9 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ variant = "sidebar", session }: AppSidebarProps) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar variant={variant}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -174,8 +175,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={{
+            name: session.user.name ?? "User",
+            email: session.user.email ?? "",
+            avatar: session.user.image ?? ""
+          }}
+        />
       </SidebarFooter>
     </Sidebar>
   )
+}
+
+interface AppSidebarProps {
+  variant?: "sidebar" | "floating" | "inset";
+  session: any;  // You might want to type this properly
 }

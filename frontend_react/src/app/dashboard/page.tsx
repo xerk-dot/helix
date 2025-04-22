@@ -10,6 +10,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import data from "./data.json";
+import { Assistant } from "../assistant";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -47,40 +48,27 @@ export default async function DashboardPage() {
         "--header-height": "calc(var(--spacing) * 12)",
       } as React.CSSProperties}
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" session={session} />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="flex h-16 items-center justify-between bg-white px-6 shadow">
-                <h1 className="text-xl font-semibold">Dashboard</h1>
-                <div className="flex items-center gap-4">
-                  <span>{session.user.name}</span>
-                  <a 
-                    href="/api/auth/signout"
-                    className="rounded-md bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300"
-                  >
-                    Sign out
-                  </a>
-                </div>
-              </div>
-
               <ResizablePanelGroup
                 direction="horizontal"
                 className="flex-1"
               >
                 <ResizablePanel 
-                  defaultSize={25} 
-                  minSize={15}
+                  defaultSize={33} 
+                  minSize={20}
                   className="bg-muted p-4"
                 >
-                  {/* Left sidebar content */}
+                  <Assistant />
                 </ResizablePanel>
                 
                 <ResizableHandle />
                 
-                <ResizablePanel defaultSize={75}>
+                <ResizablePanel defaultSize={67}>
                   <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                     <DataTable columns={columns} data={posts} />
                   </div>
