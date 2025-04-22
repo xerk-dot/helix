@@ -7,6 +7,7 @@ import {
   IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react"
+import { signOut } from "next-auth/react"
 
 import {
   Avatar,
@@ -98,11 +99,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <a href="/api/auth/signout" className="flex items-center">
-                <IconLogout className="mr-2 h-4 w-4" />
-                Log out
-              </a>
+            <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/" })}>
+              <IconLogout className="mr-2 h-4 w-4" />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

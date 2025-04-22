@@ -1,14 +1,21 @@
-import { auth } from "~/server/auth";
-import { redirect } from "next/navigation";
+"use client";
+
+import { signIn } from "next-auth/react";
 import { Button } from "~/components/ui/button";
 import { GithubIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function Home() {
-  const session = await auth();
+export default function Home() {
+  const { data: session } = useSession();
+  const router = useRouter();
   
-  if (session?.user) {
-    return redirect("/dashboard");
-  }
+  useEffect(() => {
+    if (session?.user) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
@@ -18,15 +25,13 @@ export default async function Home() {
         </h1>
         <div className="flex flex-col items-center gap-2">
           <Button
-            asChild
             variant="outline"
             size="lg"
             className="gap-2"
+            onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
           >
-            <a href="/api/auth/signin">
-              <GithubIcon className="h-5 w-5" />
-              Sign in with GitHub
-            </a>
+            <GithubIcon className="h-5 w-5" />
+            Sign in with GitHub
           </Button>
         </div>
       </div>
