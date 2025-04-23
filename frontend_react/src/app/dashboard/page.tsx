@@ -9,7 +9,6 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import data from "./data.json";
 import { Assistant } from "../assistant";
 
 export default async function DashboardPage() {
@@ -51,25 +50,27 @@ export default async function DashboardPage() {
       <AppSidebar variant="inset" session={session} />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="flex flex-1 flex-col h-screen">
+          <div className="@container/main flex flex-1 flex-col h-full">
+            <div className="flex flex-col flex-1">
               <ResizablePanelGroup
                 direction="horizontal"
-                className="flex-1"
+                className="h-full"
               >
                 <ResizablePanel 
                   defaultSize={33} 
                   minSize={20}
-                  className="bg-muted p-4"
+                  className="bg-muted overflow-hidden"
                 >
-                  <Assistant />
+                  <div className="h-full overflow-hidden">
+                    <Assistant />
+                  </div>
                 </ResizablePanel>
                 
                 <ResizableHandle />
                 
-                <ResizablePanel defaultSize={67}>
-                  <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <ResizablePanel defaultSize={67} className="h-full overflow-hidden">
+                  <div className="h-full overflow-y-auto">
                     <DataTable columns={columns} data={posts} />
                   </div>
                 </ResizablePanel>
