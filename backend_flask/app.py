@@ -6,10 +6,14 @@ import queue
 import uuid
 import os
 import openai
+from dotenv import load_dotenv
 
 ## app.py for development server, run.py for production server
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize OpenAI client
 # Make sure to set OPENAI_API_KEY environment variable or provide it here
