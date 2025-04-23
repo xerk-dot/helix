@@ -1,11 +1,6 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "~/components/ui/resizable";
-import { DataTable } from "~/components/data-table";
-import { createCaller } from "~/server/api/root";
 import { auth } from "~/server/auth";
 import { redirect } from "next/navigation";
-import { columns } from "./columns";
-import { db } from "~/server/db";
-import { type ColumnDef } from "@tanstack/react-table";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -17,28 +12,6 @@ export default async function DashboardPage() {
   if (!session?.user) {
     return redirect("/");
   }
-
-  const caller = createCaller({ db, session, headers: new Headers() });
-  const post = await caller.post.getLatest();
-  const posts = post ? [{
-    ...post,
-    createdAt: post.createdAt.toLocaleDateString(),
-  }] : [];
-
-  const columns: ColumnDef<typeof posts[0]>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created At",
-    },
-    {
-      accessorKey: "createdById",
-      header: "Created By",
-    },
-  ];
 
   return (
     <SidebarProvider
@@ -71,7 +44,7 @@ export default async function DashboardPage() {
                 
                 <ResizablePanel defaultSize={67} className="h-full overflow-hidden">
                   <div className="h-full overflow-y-auto">
-                    <DataTable columns={columns} data={posts} />
+                    {/* Right panel content goes here */}
                   </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
