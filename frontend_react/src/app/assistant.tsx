@@ -16,7 +16,7 @@ export const Assistant = () => {
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="relative h-full w-full flex">
+      <div className="relative h-full w-full flex flex-col">
         {/* Sidebar menu button */}
         <button 
           className="absolute left-4 top-4 z-20 p-2 bg-gray-200 rounded-md hover:bg-gray-300"
@@ -36,8 +36,8 @@ export const Assistant = () => {
           </div>
         </div>
         
-        {/* Main Thread container - takes full height */}
-        <div className="flex-1 h-full w-full">
+        {/* Main Thread container - takes full height with proper structure */}
+        <div className="flex-1 h-full w-full overflow-hidden">
           <Thread />
         </div>
       </div>
