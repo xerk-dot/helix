@@ -8,8 +8,7 @@ import { useState } from "react";
 
 export const Assistant = () => {
   const runtime = useChatRuntime({
-    api: "/api/chat",
-    stream: false // Disable streaming
+    api: "/api/chat"
   });
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
