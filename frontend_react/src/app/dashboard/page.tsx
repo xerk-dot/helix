@@ -5,6 +5,39 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Assistant } from "../assistant";
+import { DataTable } from "@/components/data-table";
+
+// Update the sample data with longer task descriptions
+const data = [
+  {
+    id: 1,
+    task: "Implement comprehensive user authentication system with OAuth2 integration, including social login providers and two-factor authentication support for enhanced security measures.",
+    type: "Technical",
+    status: "In Progress",
+    reviewer: "Eddie Lake"
+  },
+  {
+    id: 2,
+    task: "Design and develop responsive dashboard interface with real-time data visualization components and interactive widgets for monitoring system metrics. Ensure cross-browser compatibility and optimal performance.",
+    type: "Design",
+    status: "Done",
+    reviewer: "Jamik Tashpulatov"
+  },
+  {
+    id: 3,
+    task: "Optimize database queries and implement caching strategy to improve application performance across high-traffic periods. Implement connection pooling and query optimization techniques for better resource utilization.",
+    type: "Technical",
+    status: "In Progress",
+    reviewer: "Eddie Lake"
+  },
+  {
+    id: 4,
+    task: "Create comprehensive API documentation including endpoint specifications, request/response examples, and authentication requirements. Include practical examples and common use cases for third-party developers.",
+    type: "Documentation",
+    status: "Not Started",
+    reviewer: "Assign reviewer"
+  }
+];
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -44,7 +77,7 @@ export default async function DashboardPage() {
                 
                 <ResizablePanel defaultSize={67} className="h-full overflow-hidden">
                   <div className="h-full overflow-y-auto">
-                    {/* Right panel content goes here */}
+                    <DataTable data={data} />
                   </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
