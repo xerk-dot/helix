@@ -1,165 +1,223 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
-import time
-import threading
-import queue
+from datetime import datetime
 import uuid
 import os
-import openai
 from dotenv import load_dotenv
 
-## app.py for development server, run.py for production server
+from models import (
+    User,
+    Workflow,
+    WorkflowStep,
+    ChatMessage,
+    UserRole,
+    WorkflowStatus,
+    StepStatus,
+)
+from database import db_session, init_db
+from services.openai_service import OpenAIService
+from services.workflow_service import WorkflowService
+from services.integration_service import IntegrationService
+
+# Load environment variables
+load_dotenv()
+
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Load environment variables from .env file
-load_dotenv()
+# Initialize services
+openai_service = OpenAIService(api_key=os.getenv("OPENAI_API_KEY"))
+workflow_service = WorkflowService(openai_service)
+integration_service = IntegrationService()
 
-# Initialize OpenAI client
-# Make sure to set OPENAI_API_KEY environment variable or provide it here
-openai_client = openai.OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY")
-)
+@app.before_request
+def create_db():
+    init_db()
 
-# In-memory storage for chat history and generated sequences
-chat_history = {}
-sequence_queue = queue.Queue()
-active_streams = {}
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
 
-@app.route('/api/chat', methods=['POST'])
-def process_chat():
-    """Handle incoming chat messages, call ChatGPT, and return responses"""
+# Health check endpoint
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
+    })
+
+# Workflow endpoints
+@app.route("/api/workflows", methods=["GET"])
+def list_workflows():
+    """Get all workflows or filter by status"""
+    status = request.args.get("status")
+    if status:
+        workflows = Workflow.query.filter_by(status=WorkflowStatus(status)).all()
+    else:
+        workflows = Workflow.query.all()
+    return jsonify([w.dict() for w in workflows])
+
+@app.route("/api/workflows", methods=["POST"])
+def create_workflow():
+    """Create a new workflow"""
     data = request.json
-    user_id = data.get('user_id', str(uuid.uuid4()))
-    message = data.get('message', '')
-    
-    if not user_id in chat_history:
-        chat_history[user_id] = []
-    
-    # Store the user message
-    chat_history[user_id].append({
-        'role': 'user',
-        'content': message,
-        'timestamp': int(time.time() * 1000)  # Use milliseconds for JS compatibility
-    })
-    
-    # Prepare messages for ChatGPT
-    # We'll convert our chat history to the format expected by OpenAI's API
-    openai_messages = []
-    
-    # Add system message if needed
-    openai_messages.append({
-        "role": "system", 
-        "content": "You are a helpful assistant."
-    })
-    
-    # Add recent message history (limit to last 10 messages to avoid token limits)
-    for msg in chat_history[user_id][-10:]:
-        openai_messages.append({
-            "role": msg["role"],
-            "content": msg["content"]
-        })
-    
     try:
-        # Call ChatGPT API
-        completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Or your preferred model
-            messages=openai_messages,
-            temperature=0.7,
-            max_tokens=1000
+        workflow = Workflow(
+            id=uuid.uuid4(),
+            title=data["title"],
+            description=data.get("description", ""),
+            workflow_type=data["workflow_type"],
+            created_by=data["created_by"],
+            status=WorkflowStatus.DRAFT
+        )
+        workflow = workflow_service.create_workflow(workflow)
+        
+        # Generate initial steps if workflow type is provided
+        if data.get("generate_steps", False):
+            workflow_service.generate_workflow_steps(
+                str(workflow.id),
+                workflow.workflow_type
+            )
+        
+        return jsonify(workflow.dict()), 201
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
+
+@app.route("/api/workflows/<workflow_id>", methods=["GET"])
+def get_workflow(workflow_id):
+    """Get a specific workflow with its steps"""
+    workflow = workflow_service.get_workflow(workflow_id)
+    if not workflow:
+        return jsonify({"error": "Workflow not found"}), 404
+    
+    result = workflow.dict()
+    result["steps"] = [step.dict() for step in workflow.steps]
+    return jsonify(result)
+
+@app.route("/api/workflows/<workflow_id>", methods=["PUT"])
+def update_workflow(workflow_id):
+    """Update workflow details"""
+    workflow = workflow_service.get_workflow(workflow_id)
+    if not workflow:
+        return jsonify({"error": "Workflow not found"}), 404
+
+    data = request.json
+    for key, value in data.items():
+        if hasattr(workflow, key):
+            if key == "status":
+                value = WorkflowStatus(value)
+            setattr(workflow, key, value)
+    
+    db_session.commit()
+    return jsonify(workflow.dict())
+
+@app.route("/api/workflows/<workflow_id>/steps", methods=["GET"])
+def list_workflow_steps(workflow_id):
+    """Get all steps for a workflow"""
+    workflow = workflow_service.get_workflow(workflow_id)
+    if not workflow:
+        return jsonify({"error": "Workflow not found"}), 404
+    
+    return jsonify([step.dict() for step in workflow.steps])
+
+@app.route("/api/workflows/<workflow_id>/steps", methods=["POST"])
+def add_workflow_step(workflow_id):
+    """Add a new step to a workflow"""
+    data = request.json
+    try:
+        step = WorkflowStep(
+            id=uuid.uuid4(),
+            workflow_id=workflow_id,
+            type=data["type"],
+            title=data["title"],
+            description=data.get("description", ""),
+            assigned_to=data.get("assigned_to", "Unassigned"),
+            due_date=datetime.fromisoformat(data["due_date"]) if "due_date" in data else None,
+            status=StepStatus.NOT_STARTED
+        )
+        step = workflow_service.add_step(step)
+        return jsonify(step.dict()), 201
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
+
+@app.route("/api/workflows/<workflow_id>/steps/<step_id>", methods=["PUT"])
+def update_workflow_step(workflow_id, step_id):
+    """Update a workflow step"""
+    data = request.json
+    step = WorkflowStep.query.get(step_id)
+    if not step or str(step.workflow_id) != workflow_id:
+        return jsonify({"error": "Step not found"}), 404
+
+    for key, value in data.items():
+        if hasattr(step, key):
+            if key == "status":
+                value = StepStatus(value)
+            elif key == "due_date" and value:
+                value = datetime.fromisoformat(value)
+            setattr(step, key, value)
+    
+    db_session.commit()
+    return jsonify(step.dict())
+
+# Chat endpoints
+@app.route("/api/workflows/<workflow_id>/messages", methods=["GET"])
+def get_workflow_messages(workflow_id):
+    """Get chat messages for a workflow"""
+    workflow = workflow_service.get_workflow(workflow_id)
+    if not workflow:
+        return jsonify({"error": "Workflow not found"}), 404
+    
+    messages = ChatMessage.query.filter_by(workflow_id=workflow_id)\
+        .order_by(ChatMessage.created_at.desc())\
+        .limit(50)\
+        .all()
+    return jsonify([msg.dict() for msg in messages])
+
+@app.route("/api/workflows/<workflow_id>/messages", methods=["POST"])
+def send_message(workflow_id):
+    """Send a new message in a workflow"""
+    data = request.json
+    try:
+        chat_message = ChatMessage(
+            id=uuid.uuid4(),
+            workflow_id=workflow_id,
+            message=data["message"],
+            sender=data["sender"],
+            created_at=datetime.utcnow()
         )
         
-        # Extract the assistant's response
-        assistant_response = completion.choices[0].message.content
-        
-        # Store the response in chat history
-        chat_history[user_id].append({
-            'role': 'assistant',
-            'content': assistant_response,
-            'timestamp': int(time.time() * 1000)
-        })
-        
-        return jsonify({
-            'user_id': user_id,
-            'response': assistant_response,
-            'history': chat_history[user_id]
-        })
-        
-    except Exception as e:
-        print(f"Error calling ChatGPT API: {str(e)}")
-        return jsonify({
-            'error': 'Failed to get response from ChatGPT',
-            'details': str(e)
-        }), 500
+        # Process message with AI
+        response = workflow_service.process_message(chat_message)
+        return jsonify(response)
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
 
-@app.route('/api/generate', methods=['POST'])
-def generate_sequence():
-    """Start generating a sequence asynchronously"""
+# Integration endpoints
+@app.route("/api/integrations/linkedin/post", methods=["POST"])
+def post_to_linkedin():
+    """Post a job to LinkedIn"""
     data = request.json
-    user_id = data.get('user_id')
-    prompt = data.get('prompt', '')
-    
-    if not user_id:
-        return jsonify({'error': 'User ID is required'}), 400
-    
-    # Create a unique ID for this sequence generation
-    sequence_id = str(uuid.uuid4())
-    
-    # Start the generation in a background thread
-    threading.Thread(
-        target=generate_sequence_background,
-        args=(sequence_id, user_id, prompt),
-        daemon=True
-    ).start()
-    
-    return jsonify({
-        'sequence_id': sequence_id,
-        'status': 'generation_started'
-    })
+    result = integration_service.post_job_linkedin(data)
+    return jsonify(result)
 
-def generate_sequence_background(sequence_id, user_id, prompt):
-    """Background worker that generates sequence tokens"""
-    # Initialize stream data
-    active_streams[sequence_id] = {
-        'user_id': user_id,
-        'prompt': prompt,
-        'tokens': [],
-        'complete': False
-    }
-    
-    # Simulate generating tokens over time
-    # In a real app, this would connect to your AI model
-    tokens = list(f"Generated sequence for prompt: {prompt}")
-    for token in tokens:
-        active_streams[sequence_id]['tokens'].append(token)
-        time.sleep(0.1)  # Simulate processing time
-    
-    # Mark as complete
-    active_streams[sequence_id]['complete'] = True
+@app.route("/api/integrations/calendar/slots", methods=["POST"])
+def find_calendar_slots():
+    """Find common available time slots"""
+    data = request.json
+    slots = integration_service.find_common_slots(
+        participants=data["participants"],
+        duration=data["duration"]
+    )
+    return jsonify(slots)
 
-@app.route('/api/stream/<sequence_id>', methods=['GET'])
-def get_stream_updates(sequence_id):
-    """Get the current state of a sequence generation"""
-    if sequence_id not in active_streams:
-        return jsonify({'error': 'Invalid sequence ID'}), 404
-    
-    stream_data = active_streams[sequence_id]
-    return jsonify({
-        'sequence_id': sequence_id,
-        'tokens': stream_data['tokens'],
-        'complete': stream_data['complete']
-    })
+@app.route("/api/integrations/background-check/initiate", methods=["POST"])
+def initiate_background_check():
+    """Initiate a background check"""
+    data = request.json
+    result = integration_service.initiate_background_check(data["candidate"])
+    return jsonify(result)
 
-@app.route('/api/history/<user_id>', methods=['GET'])
-def get_chat_history(user_id):
-    """Get the chat history for a specific user"""
-    if user_id not in chat_history:
-        return jsonify({'history': []}), 200
-    
-    return jsonify({
-        'user_id': user_id,
-        'history': chat_history[user_id]
-    })
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=int(os.getenv("PORT", 5000))) 
