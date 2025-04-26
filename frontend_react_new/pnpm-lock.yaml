@@ -12,10 +12,10 @@ importers:
         specifier: ^1.3.20
         version: 1.3.20(zod@3.24.3)
       '@assistant-ui/react':
-        specifier: ^0.10.2
+        specifier: ^0.10.5
         version: 0.10.5(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
       '@assistant-ui/react-ai-sdk':
-        specifier: ^0.10.3
+        specifier: ^0.10.6
         version: 0.10.6(@assistant-ui/react@0.10.5(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0)))(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
       '@assistant-ui/react-markdown':
         specifier: ^0.10.2
@@ -87,7 +87,7 @@ importers:
         specifier: ^11.0.0
         version: 11.1.1(typescript@5.8.3)
       ai:
-        specifier: ^4.3.9
+        specifier: ^4.3.10
         version: 4.3.10(react@19.1.0)(zod@3.24.3)
       class-variance-authority:
         specifier: ^0.7.1
@@ -110,6 +110,9 @@ importers:
       openai:
         specifier: ^4.95.1
         version: 4.96.0(zod@3.24.3)
+      openai-edge:
+        specifier: ^1.2.3
+        version: 1.2.3
       postgres:
         specifier: ^3.4.4
         version: 3.4.5
@@ -3085,6 +3088,11 @@ packages:
   object.values@1.2.1:
     resolution: {integrity: sha512-gXah6aZrcUxjWg2zR2MwouP2eHlCBzdV4pygudehaKXSGW4v2AsRQUK+lwwXhii6KFZcunEnmSUoYp5CXibxtA==}
     engines: {node: '>= 0.4'}
+
+  openai-edge@1.2.3:
+    resolution: {integrity: sha512-CnEm2VbPSng1S9N/OFWmRmFC5Rm+pNID+7KYR6aIPJEnCXoH6CHzdBH6s+rLH+JGt0zuWmpC7NHMXED2dpZqPg==}
+    engines: {node: '>=18'}
+    deprecated: The official OpenAI SDK now supports edge runtimes, please use that instead.
 
   openai@4.96.0:
     resolution: {integrity: sha512-dKoW56i02Prv2XQolJ9Rl9Svqubqkzg3QpwEOBuSVZLk05Shelu7s+ErRTwFc1Bs3JZ2qBqBfVpXQiJhwOGG8A==}
@@ -6815,6 +6823,8 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
+
+  openai-edge@1.2.3: {}
 
   openai@4.96.0(zod@3.24.3):
     dependencies:
