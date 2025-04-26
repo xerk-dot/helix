@@ -25,14 +25,12 @@ import { TooltipIconButton } from "~/components/assistant-ui/tooltip-icon-button
 export const Thread: FC = () => {
   return (
     <ThreadPrimitive.Root
-      className="bg-background box-border flex h-full flex-col overflow-hidden relative"
+      className="bg-background box-border flex h-full flex-col overflow-hidden"
       style={{
         ["--thread-max-width" as string]: "42rem",
       }}
     >
-      <ThreadPrimitive.Viewport 
-        className="flex flex-col items-center overflow-y-auto scroll-smooth bg-inherit px-4 pt-8 pb-[calc(4rem+32px)]"
-      >
+      <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-4 pt-8">
         <ThreadWelcome />
 
         <ThreadPrimitive.Messages
@@ -41,20 +39,17 @@ export const Thread: FC = () => {
             EditComposer: EditComposer,
             AssistantMessage: AssistantMessage,
           }}
-          autoScroll
         />
 
         <ThreadPrimitive.If empty={false}>
           <div className="min-h-8 flex-grow" />
         </ThreadPrimitive.If>
-      </ThreadPrimitive.Viewport>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-inherit">
-        <div className="mx-auto w-full max-w-[var(--thread-max-width)] px-4 pb-4">
+        <div className="sticky bottom-0 mt-3 flex w-full max-w-[var(--thread-max-width)] flex-col items-center justify-end rounded-t-lg bg-inherit pb-4">
           <ThreadScrollToBottom />
           <Composer />
         </div>
-      </div>
+      </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
   );
 };
@@ -91,22 +86,22 @@ const ThreadWelcomeSuggestions: FC = () => {
     <div className="mt-3 flex w-full items-stretch justify-center gap-4">
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="How many people should I hire?"
+        prompt="What is the weather in Tokyo?"
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          How many people should I hire?
+          What is the weather in Tokyo?
         </span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="How do I find job applicants?"
+        prompt="What is assistant-ui?"
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          How do I find job applicants?
+          What is assistant-ui?
         </span>
       </ThreadPrimitive.Suggestion>
     </div>
