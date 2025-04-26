@@ -92,22 +92,22 @@ const ThreadWelcomeSuggestions: FC = () => {
     <div className="mt-3 flex w-full items-stretch justify-center gap-4">
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="What is the weather in Tokyo?"
+        prompt="Help me post a job opening on social media"
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          What is the weather in Tokyo?
+          Help me post my job on social media
         </span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="What is assistant-ui?"
+        prompt="Should I include a coding assessment?"
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          What is assistant-ui?
+          Should I include a coding assessment?
         </span>
       </ThreadPrimitive.Suggestion>
     </div>
