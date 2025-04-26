@@ -276,11 +276,6 @@ The AI continuously learns from:
 | Offer Letter | Candidate, Salary, Start Date |
 | Background Check | Candidate, Vendor |
 
-### Workflow Templates
-- Entry-Level Hire
-- Executive Hire
-- Contractor Hire
-
 ### Data Models
 
 ```python
