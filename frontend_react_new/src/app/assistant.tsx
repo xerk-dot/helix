@@ -14,12 +14,15 @@ export const Assistant = () => {
     api: "/api/chat"
   });
 
+
+
+
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="relative h-full w-full flex flex-col">
         {/* Sidebar menu button */}
         <button 
-          className="absolute left-4 top-4 z-20 p-2 bg-gray-200 rounded-md hover:bg-gray-300"
+          className="absolute right-4 top-4 z-20 p-2 bg-gray-200 rounded-md hover:bg-gray-300"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? '✕' : '☰'}

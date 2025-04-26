@@ -5,7 +5,7 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
 } from "@assistant-ui/react";
-import type { FC } from "react";
+import type { FC, Effect } from "react";
 import {
   ArrowDownIcon,
   CheckIcon,
@@ -17,6 +17,9 @@ import {
   SendHorizontalIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useMessage } from "@assistant-ui/react";
+import { getExternalStoreMessages } from "@assistant-ui/react";
+import { useEffect } from "react";
 
 import { Button } from "~/components/ui/button";
 import { MarkdownText } from "~/components/assistant-ui/markdown-text";
@@ -38,6 +41,9 @@ export const Thread: FC = () => {
             UserMessage: UserMessage,
             EditComposer: EditComposer,
             AssistantMessage: AssistantMessage,
+          }}
+          onMessagesChange={(messages) => {
+            console.log('Thread messages changed:', messages);
           }}
         />
 
@@ -199,14 +205,34 @@ const EditComposer: FC = () => {
 };
 
 const AssistantMessage: FC = () => {
+  const message = useMessage((m) => {
+    console.log('Raw message:', m);
+    return m;
+  });
+
+  const content = useMessage((m) => m.content);
+  console.log('Message content:', content);
+
+  // Keep the SDK conversion for reference
+  const aiSDKMessages = useMessage((m) => {
+    const messages = getExternalStoreMessages(m);
+    console.log('AI SDK Messages:', messages);
+    return messages;
+  });
+
   return (
     <MessagePrimitive.Root className="grid grid-cols-[auto_auto_1fr] grid-rows-[auto_1fr] relative w-full max-w-[var(--thread-max-width)] py-4">
       <div className="text-foreground max-w-[calc(var(--thread-max-width)*0.8)] break-words leading-7 col-span-2 col-start-2 row-start-1 my-1.5">
-        <MessagePrimitive.Content components={{ Text: MarkdownText }} />
+        <MessagePrimitive.Content 
+          components={{ 
+            Text: (props) => {
+              console.log('Message Content Props:', props);
+              return <MarkdownText {...props} />;
+            }
+          }} 
+        />
       </div>
-
       <AssistantActionBar />
-
       <BranchPicker className="col-start-2 row-start-2 -ml-2 mr-2" />
     </MessagePrimitive.Root>
   );

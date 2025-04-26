@@ -10,8 +10,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openai("gpt-4o-mini"),
     messages,
-    // forward system prompt and tools from the frontend
-    system,
+    system: "You must respond to all queries in 50 words or less. If your response exceeds 50 words, stop immediately and revise to be more concise. Count your words carefully before providing any response.",
     tools: Object.fromEntries(
       Object.entries<{ parameters: unknown }>(tools).map(([name, tool]) => [
         name,
