@@ -19,13 +19,17 @@ import {
 import { cn } from "~/lib/utils";
 import { useMessage } from "@assistant-ui/react";
 import { getExternalStoreMessages } from "@assistant-ui/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useFlaskChatIntegration } from "~/hooks/useFlaskChatIntegration";
 
 import { Button } from "~/components/ui/button";
 import { MarkdownText } from "~/components/assistant-ui/markdown-text";
 import { TooltipIconButton } from "~/components/assistant-ui/tooltip-icon-button";
 
 export const Thread: FC = () => {
+  // Initialize Flask chat integration
+  useFlaskChatIntegration();
+
   return (
     <ThreadPrimitive.Root
       className="bg-background box-border flex h-full flex-col overflow-hidden"
@@ -158,15 +162,21 @@ const ComposerAction: FC = () => {
 };
 
 const UserMessage: FC = () => {
-  return (
-    <MessagePrimitive.Root className="grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] gap-y-2 [&:where(>*)]:col-start-2 w-full max-w-[var(--thread-max-width)] py-4">
-      <UserActionBar />
+  const hasLogged = useRef(false);
 
-      <div className="bg-muted text-foreground max-w-[calc(var(--thread-max-width)*0.8)] break-words rounded-3xl px-5 py-2.5 col-start-2 row-start-2">
+  const message = useMessage((m) => {
+    if (!hasLogged.current) {
+      console.log('User Message:', m.content);
+      hasLogged.current = true;
+    }
+    return m;
+  });
+
+  return (
+    <MessagePrimitive.Root className="grid grid-cols-[auto_1fr] relative w-full max-w-[var(--thread-max-width)] py-4">
+      <div className="text-foreground max-w-[calc(var(--thread-max-width)*0.8)] break-words leading-7 col-start-2 my-1.5">
         <MessagePrimitive.Content />
       </div>
-
-      <BranchPicker className="col-span-full col-start-1 row-start-3 -mr-1 justify-end" />
     </MessagePrimitive.Root>
   );
 };
@@ -205,20 +215,18 @@ const EditComposer: FC = () => {
 };
 
 const AssistantMessage: FC = () => {
+  const hasLogged = useRef(false);
+
   const message = useMessage((m) => {
-    console.log('Raw message:', m);
+    if (m.status?.type === 'complete' && !m.loading && !hasLogged.current) {
+      console.log('AI Message:', m.content);
+      hasLogged.current = true;
+    }
     return m;
   });
 
   const content = useMessage((m) => m.content);
-  console.log('Message content:', content);
-
-  // Keep the SDK conversion for reference
-  const aiSDKMessages = useMessage((m) => {
-    const messages = getExternalStoreMessages(m);
-    console.log('AI SDK Messages:', messages);
-    return messages;
-  });
+  const aiSDKMessages = useMessage((m) => getExternalStoreMessages(m));
 
   return (
     <MessagePrimitive.Root className="grid grid-cols-[auto_auto_1fr] grid-rows-[auto_1fr] relative w-full max-w-[var(--thread-max-width)] py-4">
@@ -226,7 +234,6 @@ const AssistantMessage: FC = () => {
         <MessagePrimitive.Content 
           components={{ 
             Text: (props) => {
-              console.log('Message Content Props:', props);
               return <MarkdownText {...props} />;
             }
           }} 

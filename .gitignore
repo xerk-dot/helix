@@ -3,3 +3,4 @@ my-app
 frontend_react
 old
 .DS_Store
+backend_flask/.env
