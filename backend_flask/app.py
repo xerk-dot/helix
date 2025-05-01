@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from datetime import datetime
 import uuid
 from models import ChatMessage, Thread, db
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
+import json
 
 #  lsof -i :5005 | grep LISTEN   
 #   kill -9 37207 38234     
@@ -69,100 +71,62 @@ with app.app_context():
         db.session.add(default_thread)
         db.session.commit()
 
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 @app.route("/api/chat", methods=["GET", "POST"])
 def chat():
-    """Handle chat messages"""
-    print("\n=== New Chat Request ===")
-    print(f"Time: {datetime.now().isoformat()}")
-    print(f"Method: {request.method}")
-    
     if request.method == "GET":
         return jsonify({"status": "ok", "message": "Chat endpoint is ready"})
         
     data = request.json
     try:
-        # Debug point 1: Check incoming request
-        print("\n=== Chat Debug Point 1: Incoming Request ===")
-        print(f"Raw request data: {data}")
+        messages = data.get("messages", [])
+        system = data.get("system", "You are a helpful AI assistant that helps with recruiting and hiring workflows.")
         
-        # Validate required fields
-        if "message" not in data:
-            print("\n=== Chat Debug Point 2: Missing Message ===")
-            print(f"Available fields: {list(data.keys())}")
-            return jsonify({"error": "Missing message field"}), 400
+        # Format messages for OpenAI
+        formatted_messages = [{"role": "system", "content": system}]
+        for msg in messages:
+            if msg.get("type") == "text":
+                formatted_messages.append({
+                    "role": "user",
+                    "content": msg.get("text", "")
+                })
+        
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=formatted_messages,
+            stream=True,
+            temperature=0.7  # Add some creativity to responses
+        )
+        
+        def generate():
+            full_text = ""
             
-        message = data["message"]
-        print(f"\n=== Chat Debug Point 3: Message Content ===")
-        print(f"Message: {message}")
-        
-        # Generate AI response based on message content
-        ai_response = generate_ai_response(message)
-        print(f"\n=== Chat Debug Point 4: AI Response ===")
-        print(f"Response: {ai_response}")
-        
-        # Force flush the output
-        import sys
-        sys.stdout.flush()
-        
-        return jsonify({"response": ai_response})
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_text += content
+                    
+                    data = {
+                        "type": "text",
+                        "text": full_text
+                    }
+                    yield f"data: {json.dumps(data)}\n\n"
+
+        return Response(
+            generate(),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Content-Type': 'text/event-stream',
+            }
+        )
         
     except Exception as e:
-        print(f"\n=== Chat Debug Point 5: Error ===")
-        print(f"Error type: {type(e).__name__}")
-        print(f"Error message: {str(e)}")
-        print(f"Full traceback: {e.__traceback__}")
+        print(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-def generate_ai_response(message: str) -> str:
-    """Generate a meaningful response based on the user's message"""
-    message = message.lower()
-    
-    # Job posting related responses
-    if any(word in message for word in ["job", "hire", "recruit", "position", "opening"]):
-        if "social media" in message:
-            return """I can help you create an engaging social media post for your job opening! Here's a template you can use:
-
-🚀 We're Hiring! 🚀
-
-[Job Title] at [Company Name]
-
-Are you passionate about [industry/field]? We're looking for someone who:
-• [Key requirement 1]
-• [Key requirement 2]
-• [Key requirement 3]
-
-What we offer:
-• [Benefit 1]
-• [Benefit 2]
-• [Benefit 3]
-
-📍 Location: [Location]
-💼 Type: [Full-time/Part-time/Contract]
-💰 Salary: [Salary range]
-
-Interested? Apply now: [Application link]
-
-#Hiring #JobOpening #CareerOpportunity"""
-        else:
-            return "I can help you with job posting! Would you like me to help you create a job description or post it on social media?"
-    
-    # Coding assessment related responses
-    elif any(word in message for word in ["coding", "technical", "assessment", "test", "interview"]):
-        return """Yes, including a coding assessment can be very beneficial! Here's why:
-• Helps evaluate technical skills objectively
-• Reduces bias in the hiring process
-• Ensures candidates can actually code
-• Saves time by filtering unqualified candidates early
-
-Would you like me to help you design an appropriate coding assessment for your role?"""
-    
-    # General greeting
-    elif any(word in message for word in ["hi", "hello", "hey"]):
-        return "Hello! I'm here to help you with your hiring needs. How can I assist you today?"
-    
-    # Default response
-    else:
-        return "I'm here to help with your hiring process! Would you like help with job postings, candidate screening, or something else?"
 
 @app.route("/api/chat/log", methods=["POST"])
 def log_message():
@@ -267,7 +231,6 @@ def get_chat_logs():
                 "sender": msg.sender,
                 "timestamp": msg.timestamp.isoformat()
             }
-            for msg in messages
         ]
         
         return jsonify({"messages": formatted_messages})

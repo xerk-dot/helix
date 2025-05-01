@@ -20,16 +20,12 @@ import { cn } from "~/lib/utils";
 import { useMessage } from "@assistant-ui/react";
 import { getExternalStoreMessages } from "@assistant-ui/react";
 import { useEffect, useRef } from "react";
-import { useFlaskChatIntegration } from "~/hooks/useFlaskChatIntegration";
 
 import { Button } from "~/components/ui/button";
 import { MarkdownText } from "~/components/assistant-ui/markdown-text";
 import { TooltipIconButton } from "~/components/assistant-ui/tooltip-icon-button";
 
 export const Thread: FC = () => {
-  // Initialize Flask chat integration
-  useFlaskChatIntegration();
-
   return (
     <ThreadPrimitive.Root
       className="bg-background box-border flex h-full flex-col overflow-hidden"

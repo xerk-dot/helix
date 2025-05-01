@@ -6,6 +6,8 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 import { Providers } from "~/components/providers";
 import "~/app/globals.css";
+import type { ReactNode } from "react";
+import { MyRuntimeProvider } from "./MyRuntimeProvider";
 
 export const metadata: Metadata = {
   title: "HeLiX",
@@ -19,14 +21,18 @@ const geist = Geist({
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{
+  children: ReactNode;
+}>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body>
-        <Providers>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </Providers>
-      </body>
-    </html>
+    <MyRuntimeProvider>
+      <html lang="en" className={`${geist.variable}`}>
+        <body>
+          <Providers>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </Providers>
+        </body>
+      </html>
+    </MyRuntimeProvider>
   );
 }
